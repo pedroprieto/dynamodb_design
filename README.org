@@ -1,0 +1,2 @@
+* Diseño de Bases de Datos con DynamoDB
+Disponible en https://pedroprieto.github.io/dynamodb_design

@@ -1,0 +1,176 @@
+#+Title: Demo DynamoDB
+#+Author: Pedro Prieto
+#+Email: pedpral@gmail.com
+#+OPTIONS: toc:0 num:nil ^:nil
+* Modelo entidad relación
+
+#+BEGIN_src plantuml :file entidadrelacion.png
+' hide the spot
+hide circle
+
+' avoid problems with angled crows feet
+skinparam linetype ortho
+
+entity "Movies" as emovies {
+  *movie_id
+  --
+  *title
+  *director_id <<FK>>
+  description
+  duration
+  datePublished
+}
+
+entity "Movies_Actors" as emoviesactors {
+  *movie_id <<FK>>
+  *actor_id <<FK>>
+}
+
+entity "Directors" as edirectors {
+  *director_id
+  --
+  *name
+  birthDate
+}
+
+entity "Actors" as eactors {
+  *actor_id
+  --
+  *name
+  birthDate
+}
+
+emovies ||--o{ emoviesactors
+emoviesactors }o--|| eactors
+emovies }o--|| edirectors
+
+#+END_src
+
+
+#+RESULTS:
+* Casos de uso
+- Obtener datos de una película junto con su director y actores
+- Listado de películas
+- Listado de películas de un director
+- Listado de películas de un actor
+- Comprobar si un actor aparece en una película
+- Comprobar si un director ha dirigido una película
+- Obtener los datos de un actor junto con las películas que ha protagonizado
+- Obtener los datos de un director junto con las películas que ha dirigido
+
+* Tabla DynamoDB
+
+** Tabla principal
+
++---------------+------------------+----------------+--------------------------------+----------+---------------+
+|PK (GSI-SK)    |SK (GSI-PK)       |                                 Atributos                                  | 
++---------------+------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |title           | description                    | duration | datePublished |
+|               |movie             +----------------+--------------------------------+----------+---------------+
+|               |                  |Ghostbusters    | Ghostbusters description...    |   116    |  2016-07-09   |
+|               +------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |name            | movie_name                     |                          |
+|               |dir_director1     +----------------+--------------------------------+--------------------------+
+|               |                  |Paul Feig       | Ghostbusters                   |                          |
+|mov_movie1     +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |act_actor1        +----------------+--------------------------------+--------------------------+
+|               |                  |Chris Hemsworth | Ghostbusters                   |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |act_actor2        +----------------+--------------------------------+--------------------------+
+|               |                  |Melissa McCarthy| Ghostbusters                   |                          |
++---------------+------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |title           | description                    | duration | datePublished |
+|               |movie             +----------------+--------------------------------+----------+---------------+
+|               |                  |Thor            | Thor description...            |   115    |  2011-04-17   |
+|               +------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |name            | movie_name                     |                          |
+|mov_movie2     |dir_director2     +----------------+--------------------------------+--------------------------+
+|               |                  |Kevin Feige     | Thor                           |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |act_actor1        +----------------+--------------------------------+--------------------------+
+|               |                  |Chris Hemsworth | Thor                           |                          |
++---------------+------------------+----------------+---------------+----------------+--------------------------+
+|               |                  |name            | birthDate     |                                           |
+|dir_director1  |dir_director1     +----------------+---------------+-------------------------------------------+
+|               |                  |Paul Feig       | 1962-09-17    |                                           |
++---------------+------------------+----------------+---------------+-------------------------------------------+
+|               |                  |name            | birthDate     |                                           |
+|dir_director2  |dir_director2     +----------------+---------------+-------------------------------------------+
+|               |                  |Kevin Feige     | 1973-06-02    |                                           |
++---------------+------------------+----------------+---------------+-------------------------------------------+
+|               |                  |name            | birthDate     |                                           |
+|act_actor1     |act_actor1        +----------------+---------------+-------------------------------------------+
+|               |                  |Chris Hemsworth | 1983-08-11    |                                           |
++---------------+------------------+----------------+---------------+-------------------------------------------+
+|               |                  |name            | birthDate     |                                           |
+|act_actor2     |act_actor2        +----------------+---------------+-------------------------------------------+
+|               |                  |Melissa McCarthy| 1970-08-26    |                                           |
++---------------+------------------+----------------+---------------+-------------------------------------------+
+
+** GSI (Global Secondary Index)
+
++---------------+------------------+----------------------------------------------------------------------------+
+|PK             |SK                |                                 Atributos                                  |
++---------------+------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |title           | description                    | duration | datePublished |
+|movie          |mov_movie1        +----------------+--------------------------------+----------+---------------+
+|               |                  |Ghostbusters    | Ghostbusters description...    |   116    |  2016-07-09   |
+|               +------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |title           | description                    | duration | datePublished |
+|               |mov_movie2        +----------------+--------------------------------+----------+---------------+
+|               |                  |Thor            | Thor description...            |   115    |  2011-04-17   |
++---------------+------------------+----------------+--------------------------------+----------+---------------+
+|               |                  |name            | birthDate                      |                          |
+|dir_director1  |dir_director1     +----------------+--------------------------------+--------------------------+
+|               |                  |Paul Feig       | 1962-09-17                     |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |mov_movie1        +----------------+--------------------------------+--------------------------+
+|               |                  |Paul Feig       | Ghostbusters                   |                          |
++---------------+------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | birthDate                      |                          |
+|dir_director2  |dir_director2     +----------------+--------------------------------+--------------------------+
+|               |                  |Kevin Feige     | 1973-06-02                     |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |mov_movie2        +----------------+--------------------------------+--------------------------+
+|               |                  |Kevin Feige     | Thor                           |                          |
++---------------+------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | birthDate                      |                          |
+|act_actor1     |act_actor1        +----------------+--------------------------------+--------------------------+
+|               |                  |Chris Hemsworth | 1983-08-11                     |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |mov_movie1        +----------------+--------------------------------+--------------------------+
+|               |                  |Chris Hemsworth | Ghostbusters                   |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |mov_movie2        +----------------+--------------------------------+--------------------------+
+|               |                  |Chris Hemsworth | Thor                           |                          |
++---------------+------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | birthDate                      |                          |
+|act_actor2     |act_actor2        +----------------+--------------------------------+--------------------------+
+|               |                  |Melissa McCarthy| 1970-08-26                     |                          |
+|               +------------------+----------------+--------------------------------+--------------------------+
+|               |                  |name            | movie_name                     |                          |
+|               |mov_movie1        +----------------+--------------------------------+--------------------------+
+|               |                  |Melissa McCarthy| Ghostbusters                   |                          |
++---------------+------------------+----------------+--------------------------------+--------------------------+
+
+** Casos de uso: utilización
+
+|----------------------------------------------------------------------------+-------+------------------------------------------|
+| Caso de uso                                                                | Tabla | Consulta                                 |
+|----------------------------------------------------------------------------+-------+------------------------------------------|
+| Obtener datos de una película junto con su director y actores              | Tabla | PK="/ID_PELICULA/"                       |
+| Listado de películas                                                       | GSI   | PK="movie"                               |
+| Obtener los datos de un director junto con las películas que ha dirigido   | GSI   | PK="/ID_DIRETOR"                         |
+| Listado de películas de un director                                        | GSI   | PK="/ID_DIRECTOR/", SK BEGINS_WITH "mov" |
+| Obtener los datos de un actor junto con las películas que ha protagonizado | GSI   | PK="/ID_ACTOR"                           |
+| Listado de películas de un actor                                           | GSI   | PK="/ID_ACTOR/", SK BEGINS_WITH "mov"    |
+| Comprobar si un actor aparece en una película                              | Tabla | PK="/ID_PELICULA", SK="/ID_ACTOR/"       |
+| Comprobar si un director ha dirigido una película                          | Tabla | PK="/ID_PELICULA", SK="/ID_DIRECTOR/"    |
+|----------------------------------------------------------------------------+-------+------------------------------------------|
