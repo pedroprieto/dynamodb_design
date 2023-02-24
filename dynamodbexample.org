@@ -2,6 +2,9 @@
 #+Author: Pedro Prieto
 #+Email: pedpral@gmail.com
 #+OPTIONS: toc:0 num:nil ^:nil
+#+HTML_HEAD: <link rel="stylesheet" type="text/css" href="./estilos.css"/>
+#+HTML_HEAD: <script src="./programa.js"></script>
+#+HTML_DOCTYPE: html5
 * Modelo entidad relación
 
 #+BEGIN_src plantuml :file entidadrelacion.png
@@ -59,9 +62,10 @@ emovies }o--|| edirectors
 - Obtener los datos de un director junto con las películas que ha dirigido
 
 * Tabla DynamoDB
+** Tabla principal y GSI (Global Secondary Index)
 
-** Tabla principal
-
+#+begin_tablas
+#+begin_tablaprincipal
 +---------------+------------------+----------------+--------------------------------+----------+---------------+
 |PK (GSI-SK)    |SK (GSI-PK)       |                                 Atributos                                  | 
 +---------------+------------------+----------------+--------------------------------+----------+---------------+
@@ -110,8 +114,9 @@ emovies }o--|| edirectors
 |               |                  |Melissa McCarthy| 1970-08-26    |                                           |
 +---------------+------------------+----------------+---------------+-------------------------------------------+
 
-** GSI (Global Secondary Index)
+#+end_tablaprincipal
 
+#+begin_tablagsi
 +---------------+------------------+----------------------------------------------------------------------------+
 |PK             |SK                |                                 Atributos                                  |
 +---------------+------------------+----------------+--------------------------------+----------+---------------+
@@ -159,8 +164,12 @@ emovies }o--|| edirectors
 |               |mov_movie1        +----------------+--------------------------------+--------------------------+
 |               |                  |Melissa McCarthy| Ghostbusters                   |                          |
 +---------------+------------------+----------------+--------------------------------+--------------------------+
+#+end_tablagsi
+
+#+end_tablas
 
 ** Casos de uso: utilización
+#+begin_casosdeuso
 
 |----------------------------------------------------------------------------+-------+------------------------------------------|
 | Caso de uso                                                                | Tabla | Consulta                                 |
@@ -174,3 +183,5 @@ emovies }o--|| edirectors
 | Comprobar si un actor aparece en una película                              | Tabla | PK="/ID_PELICULA", SK="/ID_ACTOR/"       |
 | Comprobar si un director ha dirigido una película                          | Tabla | PK="/ID_PELICULA", SK="/ID_DIRECTOR/"    |
 |----------------------------------------------------------------------------+-------+------------------------------------------|
+
+#+end_casosdeuso
